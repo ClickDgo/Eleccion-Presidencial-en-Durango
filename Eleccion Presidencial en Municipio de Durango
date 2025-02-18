@@ -1,1 +1,72 @@
- para MORENA_PVEM_PT y PART:")
+# Instala y carga las librerías necesarias
+install.packages("readr")
+install.packages("ggplot2")
+library(readr)
+library(ggplot2)
+
+# Función para seleccionar archivo
+seleccionar_archivo <- function() {
+  archivo <- file.choose(new = TRUE)
+  return(archivo)
+}
+
+# Selecciona el archivo CSV
+archivo <- seleccionar_archivo()
+
+# Carga el archivo CSV
+datos <- read_csv(archivo)
+
+# Convierte los datos a numéricos
+datos$PAN_PRI_PRD <- as.numeric(as.character(datos$PAN_PRI_PRD))
+datos$PART <- as.numeric(as.character(datos$PART))
+datos$MORENA_PVEM_PT <- as.numeric(as.character(datos$MORENA_PVEM_PT))
+
+# Elimina filas con valores no numéricos
+datos <- datos[complete.cases(datos), ]
+
+# Crea un dataframe para cada variable
+datos_pan <- data.frame(variable = "PAN_PRI_PRD", valor = datos$PAN_PRI_PRD, PART = datos$PART)
+datos_morena <- data.frame(variable = "MORENA_PVEM_PT", valor = datos$MORENA_PVEM_PT, PART = datos$PART)
+
+# Combina los dataframes
+datos_combinados <- rbind(datos_pan, datos_morena)
+
+# Multiplica los valores originales por 100
+datos_combinados$valor <- datos_combinados$valor * 100
+datos_combinados$PART <- datos_combinados$PART * 100
+
+# Correlación entre PAN_PRI_PRD y PART
+correlacion_1 <- cor(datos_combinados$valor[datos_combinados$variable == "PAN_PRI_PRD"], datos_combinados$PART[datos_combinados$variable == "PAN_PRI_PRD"])
+prueba_1 <- cor.test(datos_combinados$valor[datos_combinados$variable == "PAN_PRI_PRD"], datos_combinados$PART[datos_combinados$variable == "PAN_PRI_PRD"])
+
+# Correlación entre MORENA_PVEM_PT y PART
+correlacion_2 <- cor(datos_combinados$valor[datos_combinados$variable == "MORENA_PVEM_PT"], datos_combinados$PART[datos_combinados$variable == "MORENA_PVEM_PT"])
+prueba_2 <- cor.test(datos_combinados$valor[datos_combinados$variable == "MORENA_PVEM_PT"], datos_combinados$PART[datos_combinados$variable == "MORENA_PVEM_PT"])
+
+# Visualiza las correlaciones
+ggplot(datos_combinados, aes(x = valor, y = PART, color = variable)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, aes(color = variable)) +
+  labs(title = "Elección Presidencial en el Municipio de Durango",
+       subtitle = paste("Coeficiente de correlación de Pearson PAN_PRI_PRD: ", round(correlacion_1, 4), ", MORENA_PVEM_PT: ", round(correlacion_2, 4)),
+       x = "Porcentaje de votos", y = "Porcentaje de participación electoral") +
+  scale_color_manual(values = c("#8B0A1A", "#0097A7")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Resultados de las pruebas de hipótesis
+print("Prueba de hipótesis para PAN_PRI_PRD y PART:")
+print(prueba_1)
+if (prueba_1$p.value < 0.05) {
+  print("La correlación es significativa.")
+} else {
+  print("La correlación no es significativa.")
+}
+
+print("Prueba de hipótesis para MORENA_PVEM_PT y PART:")
+print(prueba_2)
+if (prueba_2$p.value < 0.05) {
+  print("La correlación es significativa.")
+} else {
+  print("La correlación no es significativa.")
+}
+
